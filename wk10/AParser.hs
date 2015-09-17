@@ -81,8 +81,11 @@ instance Applicative Parser where
 abParser :: Parser (Char, Char)
 abParser = (\a b -> (a,b)) <$> char 'a' <*> char 'b'
 
+forgetResult :: Parser a -> Parser ()
+forgetResult = (<$>) (const ())
+
 abParser_ :: Parser ()
-abParser_ = const () <$> abParser
+abParser_ = forgetResult abParser
 
 intPair :: Parser [Integer]
 intPair = (\x _ y -> [x,y]) <$> posInt <*> char ' ' <*> posInt
@@ -91,6 +94,8 @@ intPair = (\x _ y -> [x,y]) <$> posInt <*> char ' ' <*> posInt
 instance Alternative Parser where
   empty = Parser (const Nothing)
   (Parser p1) <|> (Parser p2) = Parser (\input ->
-    case p1 input of
-      result@(Just _) -> result
-      Nothing -> p2 input)
+    p1 input <|> p2 input)
+
+{- Q5 -}
+intOrUppercase :: Parser ()
+intOrUppercase = forgetResult posInt <|> forgetResult (satisfy isUpper)
