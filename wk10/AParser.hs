@@ -5,6 +5,7 @@
 module AParser where
 
 import           Control.Applicative
+import           Control.Monad
 
 import           Data.Char
 
@@ -57,3 +58,39 @@ posInt = Parser f
 ------------------------------------------------------------
 -- Your code goes below here
 ------------------------------------------------------------
+
+{- Q1 -}
+first :: (a -> b) -> (a,c) -> (b,c)
+first f (a,c) = (f a, c)
+
+instance Functor Parser where
+  fmap f (Parser parse) = Parser (fmap (first f) . parse)
+
+{- Q2 -}
+instance Applicative Parser where
+  pure a = Parser (\s -> Just (a,s))
+  (Parser parse1) <*> (Parser parse2) = Parser (
+    parse1 >=> \(result1, input1) ->
+    first result1 <$> parse2 input1)
+
+  {-(Parser parse1) <*> (Parser parse2) = Parser (\input ->-}
+  {-  parse1 input >>= \(result1, input1) ->               -}
+  {-  first result1 <$> parse2 input1)                     -}
+
+{- Q3 -}
+abParser :: Parser (Char, Char)
+abParser = (\a b -> (a,b)) <$> char 'a' <*> char 'b'
+
+abParser_ :: Parser ()
+abParser_ = const () <$> abParser
+
+intPair :: Parser [Integer]
+intPair = (\x _ y -> [x,y]) <$> posInt <*> char ' ' <*> posInt
+
+{- Q4 -}
+instance Alternative Parser where
+  empty = Parser (const Nothing)
+  (Parser p1) <|> (Parser p2) = Parser (\input ->
+    case p1 input of
+      result@(Just _) -> result
+      Nothing -> p2 input)
