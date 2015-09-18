@@ -78,8 +78,11 @@ instance Applicative Parser where
   {-  first result1 <$> parse2 input1)                     -}
 
 {- Q3 -}
+pair :: Applicative f => f a -> f b -> f (a,b)
+pair = liftA2 (,)
+
 abParser :: Parser (Char, Char)
-abParser = (\a b -> (a,b)) <$> char 'a' <*> char 'b'
+abParser = pair (char 'a') (char 'b')
 
 forgetResult :: Parser a -> Parser ()
 forgetResult = (<$>) (const ())
@@ -88,7 +91,7 @@ abParser_ :: Parser ()
 abParser_ = forgetResult abParser
 
 intPair :: Parser [Integer]
-intPair = (\x _ y -> [x,y]) <$> posInt <*> char ' ' <*> posInt
+intPair = liftA3 (\x _ y -> [x,y]) posInt (char ' ') posInt
 
 {- Q4 -}
 instance Alternative Parser where
