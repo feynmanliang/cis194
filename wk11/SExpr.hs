@@ -16,7 +16,7 @@ zeroOrMore :: Parser a -> Parser [a]
 zeroOrMore p = oneOrMore p <|> pure []
 
 oneOrMore :: Parser a -> Parser [a]
-oneOrMore p = (fmap (:) p) <*> (zeroOrMore p)
+oneOrMore p = (:) <$> p <*> (zeroOrMore p)
 
 ------------------------------------------------------------
 --  2. Utilities
@@ -26,7 +26,7 @@ spaces :: Parser String
 spaces = zeroOrMore $ satisfy isSpace
 
 ident :: Parser String
-ident = liftA2 (++) (fmap pure $ satisfy isAlpha) (zeroOrMore $ satisfy isAlphaNum)
+ident = liftA2 (++) (pure <$> satisfy isAlpha) (zeroOrMore $ satisfy isAlphaNum)
 
 ------------------------------------------------------------
 --  3. Parsing S-expressions
@@ -42,6 +42,10 @@ data Atom = N Integer | I Ident
   deriving Show
 
 -- An S-expression is either an atom, or a list of S-expressions.
-data SExpr = A Atom
-           | Comb [SExpr]
+data SExpr = A Atom | Comb [SExpr]
   deriving Show
+
+parseSExpr :: Parser SExpr
+parseSExpr = (spaces *> ((A <$> parseAtom) <|> (Comb <$> parseComb)) <* spaces)
+        where parseAtom = (N <$> posInt) <|> (I <$> ident) -- TODO: negative integers
+              parseComb = (char '(') *> (zeroOrMore $ parseSExpr) <* (char ')')
